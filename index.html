@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Interactive English Learning</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+
+body{
+  font-family:'Poppins',sans-serif;
+  min-height:100vh;
+  color:white;
+  overflow-x:hidden;           /* ✅ allow vertical scroll, block only sideways */
+  background:
+    radial-gradient(circle at top left,#ff9a9e,transparent 45%),
+    radial-gradient(circle at bottom right,#a18cd1,transparent 45%),
+    linear-gradient(135deg,#0f0c29,#302b63,#24243e);
+  background-size:200% 200%;
+  animation:bgMove 14s ease-in-out infinite alternate;
+}
+
+/* soft moving background */
+@keyframes bgMove{
+  0%{background-position:0% 0%;}
+  50%{background-position:50% 100%;}
+  100%{background-position:100% 0%;}
+}
+
+/* floating sparkles */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background-image:
+    radial-gradient(2px 2px at 10% 20%,#fff,transparent),
+    radial-gradient(2px 2px at 80% 30%,#fff,transparent),
+    radial-gradient(2px 2px at 40% 70%,#fff,transparent),
+    radial-gradient(2px 2px at 70% 80%,#fff,transparent);
+  opacity:0.35;
+  pointer-events:none;
+  animation:stars 25s linear infinite;
+}
+@keyframes stars{
+  from{transform:translateY(0);}
+  to{transform:translateY(-220px);}
+}
+
+/* Layout */
+.wrapper{
+  display:flex;
+  min-height:100vh;            /* ✅ let it grow taller than screen */
+}
+
+/* Sidebar */
+.sidebar{
+  width:90px;
+  background:rgba(0,0,0,0.65);
+  backdrop-filter:blur(18px);
+  box-shadow:0 0 40px rgba(0,0,0,0.6);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding-top:20px;
+  transition:0.35s;
+  border-right:1px solid rgba(255,255,255,0.18);
+}
+.sidebar:hover{width:220px;}
+
+.menu-btn{
+  width:90%;
+  margin:12px 0;
+  padding:12px;
+  border-radius:16px;
+  background:linear-gradient(135deg,#00f2ff,#8e2de2);
+  color:white;
+  border:none;
+  cursor:pointer;
+  text-align:left;
+  font-size:14px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  box-shadow:0 0 12px rgba(0,242,255,0.7);
+  transition:0.25s;
+}
+.menu-btn span{white-space:nowrap;}
+.sidebar:not(:hover) .menu-btn span{display:none;}
+.menu-btn:hover{
+  transform:scale(1.07) translateX(3px);
+  box-shadow:0 0 22px #ff0080;
+}
+
+/* Main container */
+.main{
+  flex:1;
+  padding:24px;
+  overflow-y:visible;           /* ✅ let the whole page scroll instead */
+  display:flex;
+  justify-content:center;
+}
+
+.main-inner{
+  width:100%;
+  max-width:1050px;
+  background:rgba(15,12,41,0.70);
+  backdrop-filter:blur(20px);
+  border-radius:26px;
+  padding:22px 22px 26px;
+  border:1px solid rgba(255,255,255,0.18);
+  box-shadow:0 18px 45px rgba(0,0,0,0.6);
+  position:relative;
+  overflow:visible;             /* ✅ don’t cut off content inside */
+}
+
+/* decorative ring */
+.main-inner::before{
+  content:"";
+  position:absolute;
+  width:260px;
+  height:260px;
+  border-radius:50%;
+  border:18px solid rgba(0,242,255,0.18);
+  top:-120px;
+  right:-80px;
+  filter:blur(0.5px);
+}
+
+/* Heading */
+h1{
+  text-align:center;
+  font-size:30px;
+  margin-bottom:6px;
+  background:linear-gradient(90deg,#00f2ff,#ffe53b,#ff0080,#00f2ff);
+  background-size:300% 300%;
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  animation:shine 6s linear infinite;
+}
+@keyframes shine{
+  from{background-position:0%;}
+  to{background-position:300%;}
+}
+
+.subtitle{
+  text-align:center;
+  font-size:13px;
+  color:#e0e0ff;
+  margin-bottom:18px;
+  letter-spacing:1px;
+}
+
+/* section title */
+.section-title{
+  font-size:20px;
+  color:#fdfdfd;
+  margin:12px 0 4px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.section-title::before{
+  content:"";
+  width:8px;
+  height:26px;
+  border-radius:20px;
+  background:linear-gradient(180deg,#00f2ff,#8e2de2);
+  box-shadow:0 0 12px rgba(0,242,255,0.9);
+}
+
+/* Sections */
+.section{display:none;}
+.section.active{display:block;}
+
+/* Poem cards */
+.poem-card{
+  margin:16px 0;
+  padding:18px 18px 16px;
+  border-radius:18px;
+  background:linear-gradient(135deg,rgba(255,255,255,0.16),rgba(255,255,255,0.04));
+  border:1px solid rgba(255,255,255,0.25);
+  box-shadow:0 10px 28px rgba(0,0,0,0.65);
+  position:relative;
+  overflow:hidden;
+  transition:0.3s;
+}
+.poem-card::after{
+  content:"";
+  position:absolute;
+  width:140%;
+  height:140%;
+  top:-120%;
+  left:-120%;
+  background:linear-gradient(120deg,transparent,rgba(255,255,255,0.3),transparent);
+  transform:rotate(22deg);
+  transition:0.6s;
+}
+.poem-card:hover{
+  transform:translateY(-6px) scale(1.01);
+  box-shadow:0 18px 40px rgba(0,0,0,0.9);
+}
+.poem-card:hover::after{
+  top:120%;
+  left:120%;
+}
+
+.poem-title{
+  font-size:18px;
+  font-weight:600;
+  color:#00f2ff;
+  text-shadow:0 0 10px rgba(0,242,255,0.9);
+}
+.poem-text{
+  margin-top:8px;
+  line-height:1.75;
+  white-space:pre-wrap;
+  font-size:14px;
+  color:#f9f9ff;
+}
+.poem-actions{
+  margin-top:10px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+
+/* Buttons */
+button{
+  padding:8px 18px;
+  border:none;
+  border-radius:30px;
+  cursor:pointer;
+  font-size:13px;
+  background:linear-gradient(135deg,#00f2ff,#8e2de2);
+  color:white;
+  box-shadow:0 0 12px rgba(0,242,255,0.8);
+  transition:0.22s;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+}
+button:hover{
+  transform:scale(1.07) translateY(-1px);
+  box-shadow:0 0 20px #ff0080,0 0 35px rgba(0,242,255,0.9);
+}
+button.secondary{
+  background:linear-gradient(135deg,#ff0844,#ffb199);
+  box-shadow:0 0 12px rgba(255,8,68,0.8);
+}
+
+/* Games section buttons */
+#games .game-buttons{
+  margin-top:12px;
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:12px;
+}
+#games .game-buttons button{
+  font-size:14px;
+}
+
+/* Modals */
+#nameModal,#gameModal{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  background:rgba(0,0,25,0.85);
+  z-index:2000;
+}
+.popup{
+  width:340px;
+  padding:22px 20px 18px;
+  border-radius:22px;
+  background:radial-gradient(circle at top,#ffe53b,#ff0844);
+  color:#111;
+  text-align:center;
+  box-shadow:0 16px 40px rgba(0,0,0,0.8);
+}
+.popup h3{
+  margin-bottom:8px;
+}
+input{
+  width:100%;
+  padding:9px;
+  border-radius:10px;
+  border:none;
+  margin-top:8px;
+  font-size:14px;
+}
+
+/* game content */
+#scoreBoard{
+  margin-top:5px;
+  font-size:13px;
+  color:#222;
+}
+#options{
+  margin-top:12px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+#options button{
+  width:100%;
+  justify-content:center;
+}
+#gameResult{
+  margin-top:8px;
+  font-weight:600;
+}
+
+/* Leaderboard */
+#leaderboardContainer{
+  margin-top:20px;
+  background:linear-gradient(135deg,rgba(15,12,41,0.85),rgba(20,20,60,0.9));
+  border-radius:18px;
+  padding:14px 14px 10px;
+  border:1px solid rgba(255,255,255,0.15);
+  box-shadow:0 12px 28px rgba(0,0,0,0.7);
+}
+#leaderboardContainer h3{
+  margin-top:0;
+  margin-bottom:8px;
+  font-size:16px;
+}
+.leaderboard-table{
+  width:100%;
+  border-collapse:collapse;
+  margin-bottom:10px;
+  font-size:12px;
+}
+.leaderboard-table th,
+.leaderboard-table td{
+  border:1px solid rgba(255,255,255,0.18);
+  padding:4px 6px;
+  text-align:center;
+}
+.leaderboard-table th{
+  background:rgba(255,255,255,0.08);
+}
+.highlight-row{
+  background:rgba(0,255,170,0.25);
+}
+.no-scores{
+  margin:0;
+  font-size:13px;
+  color:#eee;
+}
+
+/* small screen */
+@media(max-width:700px){
+  .wrapper{flex-direction:column;}
+  .sidebar{
+    width:100%;
+    height:auto;
+    flex-direction:row;
+    justify-content:center;
+    padding-bottom:10px;
+  }
+  .sidebar:hover{width:100%;}
+  .main{
+    padding:14px;
+  }
+  .main-inner{
+    padding:16px 14px 20px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="wrapper">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <button class="menu-btn" onclick="showSection('poems')">📚 <span>Poems</span></button>
+    <button class="menu-btn" onclick="showSection('games')">🎮 <span>Grammar Games</span></button>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="main-inner">
+      <h1>Interactive English Learning</h1>
+      <div class="subtitle">CBSE Poems • Read Aloud • Grammar Mini Games with Leaderboard</div>
+
+      <!-- Poems section -->
+      <div id="poems" class="section active">
+        <div class="section-title">Poems (Class 6–12)</div>
+      </div>
+
+      <!-- Games section -->
+      <div id="games" class="section">
+        <div class="section-title">Grammar Mini Games</div>
+        <div class="game-buttons">
+          <button onclick="openNameBox('tenses')">⏳ Tenses Game</button>
+          <button onclick="openNameBox('articles')">🅰 Articles Game</button>
+          <button onclick="openNameBox('sentence')">✏ Sentence Correction</button>
+        </div>
+
+        <!-- Leaderboard -->
+        <div id="leaderboardContainer">
+          <h3>🏆 Leaderboard (All Players & Ranks)</h3>
+          <div id="leaderboardContent">
+            <p class="no-scores">No scores yet. Play a game to see rankings!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Name modal -->
+<div id="nameModal">
+  <div class="popup">
+    <h3>Enter Player Name</h3>
+    <input id="playerNameInput" placeholder="Your name">
+    <button onclick="startGameWithName()">Start Game</button>
+  </div>
+</div>
+
+<!-- Game modal -->
+<div id="gameModal">
+  <div class="popup">
+    <h3 id="gameTitle"></h3>
+    <div id="scoreBoard"></div>
+    <p id="gameQuestion"></p>
+    <div id="options"></div>
+    <p id="gameResult"></p>
+    <button onclick="nextQuestion()">Next</button>
+    <button class="secondary" onclick="closeGame()">Close</button>
+  </div>
+</div>
+
+<script>
+/* ====== Switch sections (menu) ====== */
+function showSection(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* ====== FULL POEMS ====== */
+const poems = [
+  {
+    title:"A House, A Home",
+    text:`What is a house?
+It’s brick and stone
+and wood that’s hard.
+Some window glass
+and perhaps a yard.
+It’s eaves and chimneys
+and tile floors
+and stucco and roof
+and lots of doors.
+
+What is a home?
+It’s loving and family
+and doing for others.
+It’s brothers and sisters
+and fathers and mothers.
+It’s unselfish acts
+and kindly sharing
+and showing your loved ones
+you’re always caring.
+— Lorraine M. Halli`
+  },
+  {
+    title:"The Kite",
+    text:`How bright on the blue
+Is a kite when it’s new!
+With a dive and a dip
+It snaps its tail.
+Then soars like a ship
+With only a sail.
+As over tides
+Of wind it rides,
+Climbs to the crest
+Of a gust and pulls,
+Then seems to rest
+As wind falls.
+
+When string goes slack
+You wind it back
+And run until
+A new breeze blows
+And its wings fill
+And up it goes!
+How bright on the blue
+Is a kite when it’s new!
+
+But a raggeder thing
+You never will see
+When it flaps on a string
+In the top of a tree.
+— Harry Behn`
+  },
+  {
+    title:"The Squirrel",
+    text:`He wore a question mark for tail,
+An overcoat of gray,
+He sat up straight to eat a nut.
+He liked to tease and play,
+And if we ran around his tree,
+He went the other way.
+— Mildred Bowers Armstrong`
+  },
+  {
+    title:"Meadow Surprises",
+    text:`Meadows have surprises,
+You can find them if you look;
+Walk softly through the velvet grass,
+And listen by the brook.
+
+You may see a butterfly
+Rest upon a buttercup
+And unfold its drinking straws
+To sip the nectar up.
+
+You may scare a rabbit
+Who is sitting very still;
+Though at first you may not see him,
+When he hops you will.
+
+A dandelion whose fuzzy head
+Was golden days ago
+Has turned to airy parachutes
+That flutter when you blow.`
+  },
+  {
+    title:"The Ant and the Cricket",
+    text:`A silly young cricket, accustomed to sing
+Through the warm, sunny months of gay summer and spring,
+Began to complain when he found that, at home,
+His cupboard was empty, and winter was come.
+Not a crumb to be found
+On the snow-covered ground;
+Not a flower could he see,
+Not a leaf on a tree.
+“Oh! what will become,” says the cricket, “of me?”
+At last by starvation and famine made bold,
+All dripping with wet, and all trembling with cold,
+Away he set off to a miserly ant,
+To see if, to keep him alive, he would grant
+Him shelter from rain,
+And a mouthful of grain.
+He wished only to borrow;
+He’d repay it tomorrow;
+If not, he must die of starvation and sorrow.
+Says the ant to the cricket, “I’m your servant and friend,
+But we ants never borrow; we ants never lend.
+But tell me, dear cricket, did you lay nothing by
+When the weather was warm?” Quoth the cricket, “Not I!
+My heart was so light that I sang day and night,
+For all nature looked gay.”
+“You sang, Sir, you say?
+Go then,” says the ant, “and dance the winter away.”
+Thus ending, he hastily lifted the wicket,
+And out of the door turned the poor little cricket.
+Folks call this a fable. I’ll warrant it true:
+Some crickets have four legs, and some have two.`
+  },
+  {
+    title:"The Road Not Taken",
+    text:`Two roads diverged in a yellow wood,
+And sorry I could not travel both
+And be one traveller, long I stood
+And looked down one as far as I could
+To where it bent in the undergrowth;
+
+Then took the other, just as fair,
+And having perhaps the better claim,
+Because it was grassy and wanted wear;
+Though as for that the passing there
+Had worn them really about the same.
+
+And both that morning equally lay
+In leaves no step had trodden black.
+Oh, I kept the first for another day!
+Yet knowing how way leads on to way,
+I doubted if I should ever come back.
+
+I shall be telling this with a sigh
+Somewhere ages and ages hence:
+Two roads diverged in a wood, and I —
+I took the one less travelled by,
+And that has made all the difference.
+— Robert Frost`
+  },
+  {
+    title:"Wind",
+    text:`Wind, come softly.
+Don’t break the shutters of the windows.
+Don’t scatter the papers.
+Don’t throw down the books on the shelf.
+There, look what you did — you threw them all down.
+You tore the pages of the books.
+You brought rain again.
+You’re very clever at poking fun at weaklings.
+
+Frail crumbling houses, crumbling doors, crumbling rafters,
+crumbling wood, crumbling bodies, crumbling lives,
+crumbling hearts —
+the wind god winnows and crushes them all.
+He won’t do what you tell him.
+
+So, come, let’s build strong homes,
+Let’s joint the doors firmly.
+Practise to firm the body.
+Make the heart steadfast.
+Do this, and the wind will be friends with us.
+
+The wind blows out weak fires.
+He makes strong fires roar and flourish.
+His friendship is good.
+We praise him every day.
+— Subramania Bharati`
+  },
+  {
+    title:"Dust of Snow",
+    text:`The way a crow
+Shook down on me
+The dust of snow
+From a hemlock tree
+
+Has given my heart
+A change of mood
+And saved some part
+Of a day I had rued.
+— Robert Frost`
+  },
+  {
+    title:"The Voice of the Rain",
+    text:`And who art thou? said I to the soft-falling shower,
+Which, strange to tell, gave me an answer, as here translated:
+I am the Poem of Earth, said the voice of the rain,
+Eternal I rise impalpable out of the land and the bottomless sea,
+Upward to heaven, whence vaguely form'd, altogether changed and yet the same,
+I descend to lave the droughts, atomies, dust-layers of the globe,
+And all that in them, without me, were seeds only, latent, unborn;
+And forever, by day and night, I give back life to my own origin,
+And make pure and beautify it;
+(For song, issuing from its birth-place, after fulfilment, wandering
+Reck'd or unreck'd, duly with love returns.)
+— Walt Whitman`
+  },
+  {
+    title:"Keeping Quiet",
+    text:`Now we will count to twelve
+and we will all keep still
+for once on the face of the earth,
+let’s not speak in any language;
+let’s stop for a second,
+and not move our arms so much.
+
+It would be an exotic moment
+without rush, without engines;
+we would all be together
+in a sudden strangeness.
+
+Fishermen in the cold sea
+would not harm whales
+and the man gathering salt
+would not look at his hurt hands.
+
+Those who prepare green wars,
+wars with gas, wars with fire,
+victories with no survivors,
+would put on clean clothes
+and walk about with their brothers
+in the shade, doing nothing.
+
+What I want should not be confused
+with total inactivity.
+Life is what it is about;
+I want no truck with death.
+
+If we were not so single-minded
+about keeping our lives moving,
+and for once could do nothing,
+perhaps a huge silence
+might interrupt this sadness
+of never understanding ourselves
+and of threatening ourselves with death.
+
+Now I’ll count up to twelve
+and you keep quiet and I will go.
+— Pablo Neruda`
+  }
+];
+
+/* Render poems */
+const poemsBox=document.getElementById("poems");
+poems.forEach((p,i)=>{
+  const div=document.createElement("div");
+  div.className="poem-card";
+  div.innerHTML=`
+    <div class="poem-title">${p.title}</div>
+    <div class="poem-text">${p.text}</div>
+    <div class="poem-actions">
+      <button onclick="readPoem(${i})">🔊 Read Aloud</button>
+      <button class="secondary" onclick="stopReading()">⏹ Stop</button>
+    </div>
+  `;
+  poemsBox.appendChild(div);
+});
+
+/* Read Aloud + Stop */
+let currentUtterance=null;
+function readPoem(i){
+  if("speechSynthesis" in window){
+    speechSynthesis.cancel();
+    currentUtterance=new SpeechSynthesisUtterance(poems[i].text);
+    speechSynthesis.speak(currentUtterance);
+  }else{
+    alert("Speech not supported in this browser.");
+  }
+}
+function stopReading(){
+  if("speechSynthesis" in window){
+    speechSynthesis.cancel();
+  }
+}
+
+/* ====== GRAMMAR GAMES WITH 10 QUESTIONS EACH ====== */
+const games={
+  tenses:[
+    {q:"She ___ to school every day.",options:["go","goes","going"],answer:"goes"},
+    {q:"They ___ football now.",options:["is playing","are playing","played"],answer:"are playing"},
+    {q:"I ___ my homework yesterday.",options:["do","did","done"],answer:"did"},
+    {q:"We ___ a movie last night.",options:["watch","watched","watching"],answer:"watched"},
+    {q:"He ___ here since morning.",options:["is","has been","was"],answer:"has been"},
+    {q:"Look! It ___ outside.",options:["rains","is raining","rained"],answer:"is raining"},
+    {q:"By 8 p.m., I ___ my work.",options:["will finish","will have finished","finished"],answer:"will have finished"},
+    {q:"She usually ___ tea at 5 p.m.",options:["drink","drinks","is drinking"],answer:"drinks"},
+    {q:"We ___ to Delhi next week.",options:["go","are going","went"],answer:"are going"},
+    {q:"He ___ the letter before I arrived.",options:["has written","had written","writes"],answer:"had written"}
+  ],
+  articles:[
+    {q:"I saw ___ elephant at the zoo.",options:["a","an","the"],answer:"an"},
+    {q:"She bought ___ umbrella.",options:["a","an","the"],answer:"an"},
+    {q:"He is ___ honest man.",options:["a","an","the"],answer:"an"},
+    {q:"Please close ___ door.",options:["a","an","the"],answer:"the"},
+    {q:"___ sun rises in the east.",options:["A","An","The"],answer:"The"},
+    {q:"She is eating ___ apple.",options:["a","an","the"],answer:"an"},
+    {q:"My father is ___ teacher.",options:["a","an","the"],answer:"a"},
+    {q:"They live in ___ old house.",options:["a","an","the"],answer:"an"},
+    {q:"I want to buy ___ blue pen.",options:["a","an","the"],answer:"a"},
+    {q:"We saw ___ Taj Mahal last year.",options:["a","an","the"],answer:"the"}
+  ],
+  sentence:[
+    {q:"Choose the correct sentence.",options:["He go to school every day.","He goes to school every day."],answer:"He goes to school every day."},
+    {q:"Choose the correct sentence.",options:["She are happy today.","She is happy today."],answer:"She is happy today."},
+    {q:"Choose the correct sentence.",options:["We was late for class.","We were late for class."],answer:"We were late for class."},
+    {q:"Choose the correct sentence.",options:["They is playing football.","They are playing football."],answer:"They are playing football."},
+    {q:"Choose the correct sentence.",options:["I has finished my work.","I have finished my work."],answer:"I have finished my work."},
+    {q:"Choose the correct sentence.",options:["She don't like coffee.","She doesn't like coffee."],answer:"She doesn't like coffee."},
+    {q:"Choose the correct sentence.",options:["The childrens are singing.","The children are singing."],answer:"The children are singing."},
+    {q:"Choose the correct sentence.",options:["My friend and me are studying.","My friend and I are studying."],answer:"My friend and I are studying."},
+    {q:"Choose the correct sentence.",options:["He didn't went to school.","He didn't go to school."],answer:"He didn't go to school."},
+    {q:"Choose the correct sentence.",options:["There is many books on the table.","There are many books on the table."],answer:"There are many books on the table."}
+  ]
+};
+
+let currentGame="";
+let qIndex=0;
+let score=0;
+let playerName="";
+let leaderboard=[]; // {name,game,score,total}
+let lastEntry=null;
+
+/* Name modal */
+function openNameBox(type){
+  currentGame=type;
+  document.getElementById("playerNameInput").value="";
+  document.getElementById("nameModal").style.display="flex";
+}
+
+function startGameWithName(){
+  playerName=document.getElementById("playerNameInput").value || "Player";
+  qIndex=0;
+  score=0;
+  document.getElementById("nameModal").style.display="none";
+  document.getElementById("gameModal").style.display="flex";
+  loadQuestion();
+}
+
+/* Game logic */
+function loadQuestion(){
+  const list=games[currentGame];
+  const g=list[qIndex];
+  const total=list.length;
+
+  document.getElementById("gameTitle").innerText=currentGame.toUpperCase()+" GAME";
+  document.getElementById("scoreBoard").innerText=`${playerName} | Score: ${score} / ${total} | Question ${qIndex+1} of ${total}`;
+  document.getElementById("gameQuestion").innerText=g.q;
+
+  const box=document.getElementById("options");
+  box.innerHTML="";
+  document.getElementById("gameResult").innerText="";
+
+  g.options.forEach(opt=>{
+    const b=document.createElement("button");
+    b.innerText=opt;
+    b.onclick=()=>checkAnswer(opt,b);
+    box.appendChild(b);
+  });
+}
+
+function checkAnswer(ans,btn){
+  const g=games[currentGame][qIndex];
+  const result=document.getElementById("gameResult");
+  const buttons=document.querySelectorAll("#options button");
+  buttons.forEach(b=>b.disabled=true);
+
+  if(ans===g.answer){
+    score++;
+    btn.style.background="linear-gradient(135deg,#00b894,#00cec9)";
+    result.innerText="✅ Correct!";
+    result.style.color="#0c6";
+  }else{
+    btn.style.background="linear-gradient(135deg,#ff7675,#d63031)";
+    result.innerText="❌ Wrong!";
+    result.style.color="#ffb3b3";
+  }
+
+  const total=games[currentGame].length;
+  document.getElementById("scoreBoard").innerText=
+    `${playerName} | Score: ${score} / ${total} | Question ${qIndex+1} of ${total}`;
+}
+
+function nextQuestion(){
+  const total=games[currentGame].length;
+  qIndex++;
+  if(qIndex>=total){
+    finishGame();
+  }else{
+    loadQuestion();
+  }
+}
+
+function finishGame(){
+  const total=games[currentGame].length;
+  alert(`${playerName}, your final score is ${score} / ${total}`);
+
+  const entry={name:playerName,game:currentGame,score:score,total:total};
+  leaderboard.push(entry);
+  lastEntry=entry;
+  updateLeaderboardUI();
+  closeGame();
+}
+
+function closeGame(){
+  document.getElementById("gameModal").style.display="none";
+}
+
+/* ====== FULL LEADERBOARD (ALL PLAYERS) ====== */
+function updateLeaderboardUI(){
+  const container=document.getElementById("leaderboardContent");
+  if(leaderboard.length===0){
+    container.innerHTML='<p class="no-scores">No scores yet. Play a game to see rankings!</p>';
+    return;
+  }
+
+  const gamesList=["tenses","articles","sentence"];
+  let html="";
+
+  gamesList.forEach(gameKey=>{
+    const gameName = gameKey==="tenses" ? "Tenses" :
+                     gameKey==="articles" ? "Articles" :
+                     "Sentence Correction";
+
+    const entries=leaderboard
+      .filter(e=>e.game===gameKey)
+      .sort((a,b)=>b.score-a.score);
+
+    if(entries.length===0) return;
+
+    html+=`<h4 style="margin:8px 0 4px;">${gameName}</h4>`;
+    html+=`<table class="leaderboard-table">
+      <tr><th>Rank</th><th>Player</th><th>Score</th></tr>`;
+
+    entries.forEach((e,idx)=>{
+      const rank=idx+1;
+      const isCurrent=(e===lastEntry);
+      html+=`<tr class="${isCurrent?'highlight-row':''}">
+        <td>${rank}</td>
+        <td>${e.name}</td>
+        <td>${e.score} / ${e.total}</td>
+      </tr>`;
+    });
+
+    html+="</table>";
+  });
+
+  if(html===""){
+    container.innerHTML='<p class="no-scores">No scores yet. Play a game to see rankings!</p>';
+  }else{
+    container.innerHTML=html;
+  }
+}
+</script>
+
+</body>
+</html>
